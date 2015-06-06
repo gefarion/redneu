@@ -47,3 +47,47 @@ class HebbNeuralNetwork():
                         dw[i][j] = learning_rate * y[j] * (x[i] - xe)
 
                 self.weights += dw
+
+class GHANeuralNetwork():
+
+    def __init__(self, ninputs, noutputs, learning_rate=0.01):
+
+        self.learning_rate = learning_rate
+
+        self.ninputs = ninputs
+        self.noutputs = noutputs
+        self.weights = np.random.uniform(-0.5, 0.5, (noutputs, ninputs))
+
+    def ninputs(self):
+        return self.ninputs
+
+    def noutputs(self):
+        return self.noutputs
+
+    def weights(self):
+        return self.weights
+
+    def activate(self, input):
+
+        x = np.array([input]).T
+        y = np.dot(self.weights, x)
+        return y.T[0]
+
+    def train(self, dataset, epochs, ecallback=None):
+
+        for e in range(1, epochs + 1):
+
+            learning_rate = self.learning_rate / e
+            tdw = 0
+
+            for x in dataset:
+
+                x = np.array([x]).T
+                y = np.dot(self.weights, x)
+                
+                dw = learning_rate * ( np.dot(y, x.T) - np.dot(np.tril(np.dot(y, y.T)), self.weights) ) 
+                self.weights += dw
+                tdw += sum(dw **2)
+
+            if ecallback: ecallback(self, e, tdw)
+
