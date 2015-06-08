@@ -5,19 +5,18 @@ import sys
 if __name__ == "__main__":
 
     A = (1, 5, 10, 15, 25, 50)
-    EPOCHS = 100
+    EPOCHS = 1000
 
     dataset = []
     for i in range(0, 1000):
         point = [ np.random.uniform(-a, a) for a in A ]
         dataset.append(point)
 
-    def call(hnn, e, tdw):
-        print("\rTRAINING EPOCH: {} ({}%)".format(e, 100 * e / EPOCHS), end='')
+    def call(hnn, t, tdw):
+        print("\rTRAINING EPOCH: {} ({}%) tdw: {}".format(t, 100 * t / EPOCHS, tdw), end='')
         sys.stdout.flush()
 
-    # hnn = HebbNeuralNetwork(6, 4, learning_rate=0.0001)
-    hnn = GHANeuralNetwork(6, 4, learning_rate=0.0001)
+    hnn = GHANeuralNetwork(6, 4, 0.0001, 0.5)
     hnn.train(dataset, EPOCHS, ecallback=call)
 
     outputs = [ hnn.activate(x) for x in dataset ]

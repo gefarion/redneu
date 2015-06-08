@@ -1,4 +1,4 @@
-from somap import SelfOrganizedMap
+from redneu.somap import SelfOrganizedMap
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # Creo y entreno la red
     output_size = (10, 10)
     somap = SelfOrganizedMap(2, output_size, 0.5, 0.5)
-    def printe(somap, epochs, lr, sg):
+    def printe(somap, epochs, , tdw, lr, sg):
         print(epochs)
     somap.train(all_points, 100, printe)
 
@@ -54,15 +54,11 @@ if __name__ == "__main__":
             output_region_count[neuron[0]][neuron[1]][r] += 1
 
     class_layer = np.full(output_size, -1)
-    colors = ['r', 'b', 'g', 'y']
     for i in range(output_size[0]):
         for j in range(output_size[1]):
             imax = output_region_count[i][j].argmax()
             if output_region_count[i][j][imax] > 0:
                 class_layer[i][j] = imax
-                plt.plot(i + 1, j + 1, colors[imax] + 'o')
-    plt.axis([0, 11, 0, 11])
-    print(class_layer)
 
     # Prueba del clasificador
     test_points = generar_puntos(limits, 500)
@@ -96,10 +92,7 @@ if __name__ == "__main__":
         100.0 * total_miss / (total_hit + total_miss))
     )
 
+
+    print(class_layer)
+    plt.matshow(class_layer)
     plt.show()
-
-
-
-
-
-

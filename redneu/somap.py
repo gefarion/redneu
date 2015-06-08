@@ -1,16 +1,51 @@
 #!/user/bin/python3
 import numpy as np
 
+class SOMapClassifier():
+
+    def _init_classmap(self, dataset):
+
+        output_size = self.somap.output_size
+
+        class_counter = np.zeros((output_size[0], output_size[1], max(dataset.categories()) + 1))
+        for data in dataset.dataset:
+            y = self.somap.activate(data[1:])
+            neuron = np.unravel_index(y.argmax(), y.shape)
+            class_counter[neuron[0]][neuron[1]][data[0]] += 1
+
+        for i in range(output_size[0]):
+         for j in range(output_size[1]):
+                cmax = class_counter[i][j].argmax()
+                if class_counter[i][j][cmax] > 0:
+                    self.classmap[i][j] = cmax
+
+
+    def __init__(self, somap, dataset):
+
+        self.somap = somap
+        self.classmap = np.full(somap.output_size, -1)
+        self._init_classmap(dataset)
+
+
+    def classify(self, data):
+        y = self.somap.activate(data)
+        neuron = np.unravel_index(y.argmax(), y.shape)
+        return self.classmap[neuron[0]][neuron[1]]
+
+
 class SelfOrganizedMap():
 
-    def __init__(self, ninputs, output_size, learning_rate_coef, sigma_coef):
+    def __init__(self, ninputs, output_size, learning_rate, sigma):
 
-        self.learning_rate_coef = learning_rate_coef
-        self.sigma_coef = sigma_coef
+        self.learning_rate = learning_rate
+        self.sigma = sigma
 
         self.ninputs = ninputs
         self.output_size = output_size
         self.noutputs = output_size[0] * output_size[1]
+
+        self.neigx = np.arange(output_size[0])
+        self.neigy = np.arange(output_size[1])
 
         self.weights = np.random.uniform(-0.5, 0.5, (self.ninputs, self.noutputs))
 
@@ -34,30 +69,41 @@ class SelfOrganizedMap():
 
         return r.reshape(self.output_size);
 
-    def _proxy(self, p, sigma):
+    def gaussian(self, c, sigma):
+
+        d = 2 * np.pi * sigma * sigma
+        ax = np.exp(-np.power(self.neigx - c[0], 2) / d)
+        ay = np.exp(-np.power(self.neigy - c[1], 2)/ d)
+        return np.outer(ax, ay)
+
+    def proxy(self, p, sigma): # Funcion recomendada por la catedra (lenta)
 
         d = np.zeros(self.output_size)
+
         for i in range(0, self.output_size[0]):
             for j in range(0, self.output_size[1]):
                 d[i][j] = np.e ** (- ((i - p[0])**2 + (j - p[1])**2) / (2 * (sigma ** 2)))
 
         return d
 
-    def _correction(self, input, learning_rate, sigma):
+    def correction(self, input, learning_rate, sigma):
 
         y = self.activate(input)
         p = np.unravel_index(y.argmax(), y.shape)
-        d = self._proxy(p, sigma)
+        d = self.gaussian(p, sigma)
         dw = learning_rate * (np.array([input]).transpose() - self.weights) * d.flatten()
         self.weights += dw
 
-    def train(self, dataset, epochs, ecallback=None):
+        return dw
+
+    def train(self, dataset, epochs, callback=None):
 
         for t in range(1, epochs + 1):
-            learning_rate = t ** (- self.learning_rate_coef)
-            sigma = t ** (- self.sigma_coef)
+            eta = t ** (- self.learning_rate)
+            sigma = t ** (- self.sigma)
 
-            if ecallback: ecallback(self, t, learning_rate, sigma)
-
+            tdw = np.zeros((self.ninputs, self.noutputs))
             for x in dataset:
-                self._correction(x, learning_rate, sigma)
+                tdw += self.correction(x, eta, sigma) ** 2
+
+            if callback: callback(self, t, tdw.sum(), eta, sigma)

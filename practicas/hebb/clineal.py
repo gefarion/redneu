@@ -1,4 +1,4 @@
-from hebb import HebbNeuralNetwork
+from redneu.hebb import HebbNeuralNetwork
 import numpy as np
 
 

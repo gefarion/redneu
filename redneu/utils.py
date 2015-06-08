@@ -1,3 +1,5 @@
+import random
+
 class BOWDataset(object):
 
     def __init__(self, dataset=None, filename=None):
@@ -14,7 +16,21 @@ class BOWDataset(object):
         else:
             self.dataset = []
 
+    def slice(self, min=None, max=None):
+
+        return BOWDataset(dataset=self.dataset[min:max])
+
+    def categories(self):
+
+        categories = set()
+        for data in self.dataset:
+            categories.add(data[0])
+
+        return categories
+
+
     def words_count(self):
+
         return len(self.dataset[0]) - 1
 
 
@@ -50,10 +66,28 @@ class BOWDataset(object):
 
         return BOWDataset(dataset=new_dataset)
 
+    def shuffle(self):
+
+        random.shuffle(self.dataset)
+
 
     def uncategorized_dataset(self):
 
         return  [ data[1:] for data in self.dataset ]
+
+
+    def activate_neural_network(self, hnn):
+
+        new_dataset = [ [data[0]] + hnn.activate(data[1:]).tolist() for data in self.dataset ]
+        return BOWDataset(dataset=new_dataset)
+
+
+    def save_to_file(filename, separator=','):
+
+        fout = open(filename, 'w');
+        for data in self.dataset:
+            fout.write(separator.join(data))
+        fout.close()
 
 
     def __str__(self):
