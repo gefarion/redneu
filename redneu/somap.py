@@ -32,6 +32,20 @@ class SOMapClassifier():
         neuron = np.unravel_index(y.argmax(), y.shape)
         return self.classmap[neuron[0]][neuron[1]]
 
+    def fill_classmap(self):
+        classmap = self.classmap
+        for i in range(len(classmap)):
+            for j in range(len(classmap[0])):
+                if (classmap[i][j] < 0):
+                    values = [
+                        classmap[i-1][j],
+                        classmap[(i+1) % len(classmap)][j],
+                        classmap[i][j-1],
+                        classmap[i][(j+1) % len(classmap[0])]
+                    ]
+                    classmap[i][j] = max(set(values), key=values.count)
+
+
 
 class SelfOrganizedMap():
 
@@ -106,4 +120,4 @@ class SelfOrganizedMap():
             for x in dataset:
                 tdw += self.correction(x, eta, sigma) ** 2
 
-            if callback: callback(self, t, tdw.sum(), eta, sigma)
+            if callback: callback(self, t, tdw.sum() / len(dataset), eta, sigma)

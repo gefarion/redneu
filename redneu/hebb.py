@@ -90,5 +90,5 @@ class GHANeuralNetwork():
                 self.weights += dw
                 tdw += dw ** 2
 
-            if callback: callback(self, t, tdw.sum())
+            if callback: callback(self, t, tdw.sum() / len(dataset))
 

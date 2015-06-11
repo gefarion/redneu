@@ -4,6 +4,7 @@ import numpy as np
 from redneu.utils import BOWDataset
 import matplotlib.pyplot as plt
 import sys
+from xtermcolor import colorize
 
 def show_activation_layer(somap, dataset, category):
 
@@ -18,6 +19,15 @@ def show_activation_layer(somap, dataset, category):
 
     plt.matshow(activation_layer)
 
+def print_matrix(matrix):
+    for i in range(len(matrix)):
+        print('');
+        for j in range(len(matrix[0])):
+            if (matrix[i][j] >= 0):
+                print(colorize('  ', ansi=int(matrix[i][j]), ansi_bg=int(matrix[i][j])), end='')
+            else:
+                print('  ', end='')
+
 
 print("Cargando dataset...")
 dataset = BOWDataset(filename='tp2/tp2_training_dataset.csv')
@@ -29,22 +39,22 @@ def gha_call(hnn, t, tdw):
     print("\rTRAINING EPOCH: {} ({:.2%}) tdw: {}".format(t, t / GHA_EPOCHS, tdw), end='')
     sys.stdout.flush()
 
-LIMIT = 700
+LIMIT = 900
 
 GHA_EPOCHS = 200
-ghann = GHANeuralNetwork(len(dataset.dataset[0]) - 1, 10, 0.0001, 0.1)
+ghann = GHANeuralNetwork(len(dataset.dataset[0]) - 1, 10, 0.1, 0.1)
 ghann.train(dataset.uncategorized_dataset()[:LIMIT], GHA_EPOCHS, callback=gha_call)
 
 reduced_dataset = dataset.activate_neural_network(ghann)
 
 print("\n\nEntrenando SOMAP...")
 
-output_size = (20, 20)
+output_size = (40, 40)
 udataset = reduced_dataset.uncategorized_dataset()
 
 somap = SelfOrganizedMap(len(udataset[0]), output_size, 0.5, 0.3)
 
-SOMAP_EPOCHS = 10000
+SOMAP_EPOCHS = 400
 def somap_call(somap, t, tdw, lr, sg):
     print("\rTRAINING EPOCH: {} ({:.2%}) tdw: {}".format(t, t / SOMAP_EPOCHS, tdw), end='')
     sys.stdout.flush()
@@ -52,10 +62,11 @@ def somap_call(somap, t, tdw, lr, sg):
 somap.train(udataset[:LIMIT], SOMAP_EPOCHS, somap_call)
 
 classifier = SOMapClassifier(somap, reduced_dataset.slice(None, LIMIT))
+classifier.fill_classmap()
 
 total = [0, 0, 0]
 total_by_class = [ [0, 0, 0] for i in range(9) ]
-for data in reduced_dataset.dataset[LIMIT:]:
+for data in reduced_dataset.dataset[:]:
     c = int(classifier.classify(data[1:]))
     if (c == -1):
         total[2] += 1
@@ -73,14 +84,13 @@ def stats(total):
 print("\n\nResultado: " + stats(total))
 
 for c in range(9):
-    print("[{}] Resultado: ".format(c) + stats(total_by_class[c]))
+    print("[{}] Resultado: ".format(colorize('  ', ansi=int(c+1), ansi_bg=int(c+1))) + stats(total_by_class[c]))
 
-
-plt.matshow(classifier.classmap)
-plt.show()
+print("\nMapa de clases:")
+print_matrix(classifier.classmap)
 
 # for cat in range(1, 10):
 #     show_activation_layer(somap, reduced_dataset.dataset, cat)
 
 # plt.show()
-print('')
+print("\n")
